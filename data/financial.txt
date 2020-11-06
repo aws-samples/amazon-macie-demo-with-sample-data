@@ -1,0 +1,8 @@
+#Fake credit card data
+American Express
+5135725008183484 09/26
+CVE: 550
+
+American Express
+347965534580275 05/20
+CID: 4758

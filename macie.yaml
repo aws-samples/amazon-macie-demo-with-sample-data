@@ -1,0 +1,204 @@
+Parameters:
+  ResourceName:
+    Type: String
+    Default: amazon-macie-demo
+    AllowedValues:
+      - amazon-macie-demo
+    Description: Prefix of Resources created for this demo.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Resource Configuration"
+        Parameters:
+          - ResourceName
+    ParameterLabels:
+      ResourceName:
+        default: "Resource Prefix"
+
+Resources:
+# Enable Amazon Macie
+  MacieSession:
+    Type: AWS::Macie::Session
+    Properties:
+      FindingPublishingFrequency: FIFTEEN_MINUTES
+      Status: ENABLED
+
+#Create Amazon Macie S3 Bucket with its Bucket Policy
+  MacieDataBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'AES256'
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+      BucketName:
+        Fn::Join:
+          - '-'
+          - ['macie-data', !Ref "AWS::AccountId", !Ref "AWS::Region"]
+  MacieDataBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref MacieDataBucket
+      PolicyDocument:
+        Id: MacieDataBucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Action: s3:ListBucket
+            Sid: PublicBucketPolicy
+            Effect: Allow
+            Principal: '*'
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref 'MacieDataBucket']]
+
+# Create Amazon Macie Custom Data Identifier
+  MacieCustomDataIdentifier:
+    Type: AWS::Macie::CustomDataIdentifier
+    DependsOn: MacieSession
+    Properties:
+        Description: "Patent Information Detector"
+        Keywords:
+            - "patentID"
+            - "patentid"
+            - "patent"
+        MaximumMatchDistance: 50
+        Name: PatentIDCustomDataIdentifier
+        Regex: Octank-\d{8}
+
+# Generate Fake Data for Amazon Macie Job on Stack Creation
+# Clean up S3 buckets on Stack Deletion
+  GenerateAndCleanupMacieData:
+    DependsOn:
+      - MacieDataBucket
+    Type: Custom::generateandcleanupmaciedata
+    Properties:
+      ServiceToken:
+       Fn::GetAtt:
+          - "GenerateAndCleanupMacieDataLambda"
+          - "Arn"
+      BucketName: !Ref MacieDataBucket
+
+  GenerateAndCleanupLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/GenerateAndCleanupMacieDataLambda
+      RetentionInDays: 30
+
+  GenerateAndCleanupMacieDataLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: !Join [ -, [!Ref ResourceName, 'GenerateAndCleanupMacieDataLambdaPolicy'] ]
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:DescribeLogStreams
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - s3:DeleteObject
+            - s3:ListBucket
+            - macie2:CreateClassificationJob
+            Resource: '*'
+          - Effect: Allow
+            Action: s3:PutObject
+            Resource: !Join ['', ['arn:aws:s3:::', 'macie-data-', !Ref "AWS::AccountId", '-' , !Ref "AWS::Region", /*]]
+          - Effect: Allow
+            Action: s3:PutEncryptionConfiguration
+            Resource: !Join ['', ['arn:aws:s3:::', 'macie-data-', !Ref "AWS::AccountId", '-' , !Ref "AWS::Region"]]
+
+  GenerateAndCleanupMacieDataLambda:
+    DependsOn:
+      - MacieSession
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: GenerateAndCleanupMacieDataLambda
+      Handler: "index.lambda_handler"
+      Runtime: python3.7
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt GenerateAndCleanupMacieDataLambdaRole.Arn
+      Code:
+        ZipFile: !Sub |
+            import json, boto3, logging, os, urllib3
+            import cfnresponse
+            logger = logging.getLogger()
+            logger.setLevel(logging.INFO)
+            AccountId = os.environ['AccountId']
+            BucketMacie = os.environ['BucketMacie']
+            CustomDataIdentifierID = os.environ['CustomDataIdentifierID']
+
+            def lambda_handler(event, context):
+                logger.info("event: {}".format(event))
+                try:
+                    bucket = event['ResourceProperties']['BucketName']
+                    logger.info("bucket: {}, event['RequestType']: {}".format(bucket,event['RequestType']))
+                    if event['RequestType'] == 'Delete':
+                        s3 = boto3.resource('s3')
+                        bucket = s3.Bucket(bucket)
+                        for obj in bucket.objects.filter():
+                            logger.info("delete obj: {}".format(obj))
+                            s3.Object(bucket.name, obj.key).delete()
+                    elif event['RequestType'] == 'Create':
+                        s3 = boto3.client('s3')
+                        response = s3.delete_bucket_encryption(Bucket=BucketMacie)
+
+                        github_url = 'https://raw.githubusercontent.com/sgulbetekin/macie-demo/master/data/'
+                        s3files = [ 'patent.txt', 'financial.txt', 'employee.txt', 'credentials.txt' ]
+
+                        for s3file in s3files:
+                          s3=boto3.client('s3')
+                          http=urllib3.PoolManager()
+                          s3.upload_fileobj(http.request('GET', github_url+s3file, preload_content=False), BucketMacie, s3file)
+
+                        client = boto3.client('macie2')
+                        response = client.create_classification_job(
+                        customDataIdentifierIds=[ CustomDataIdentifierID ],
+                        description='macie',
+                        initialRun=True,
+                        jobType='ONE_TIME',
+                        name='macie',
+                        s3JobDefinition={
+                            'bucketDefinitions': [
+                                {
+                                    'accountId': AccountId,
+                                    'buckets': [ BucketMacie ]
+                                }
+                            ]}
+                        )
+
+                    sendResponseCfn(event, context, cfnresponse.SUCCESS)
+                except Exception as e:
+                    logger.info("Exception: {}".format(e))
+                    sendResponseCfn(event, context, cfnresponse.FAILED)
+
+            def sendResponseCfn(event, context, responseStatus):
+                responseData = {}
+                responseData['Data'] = {}
+                cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")
+      Environment:
+        Variables:
+          Region:
+            !Ref "AWS::Region"
+          AccountId:
+            !Ref "AWS::AccountId"
+          CustomDataIdentifierID:
+            !GetAtt MacieCustomDataIdentifier.Id
+          BucketMacie:
+            Fn::Join:
+              - '-'
+              - ['macie-data', !Ref "AWS::AccountId", !Ref "AWS::Region"]
