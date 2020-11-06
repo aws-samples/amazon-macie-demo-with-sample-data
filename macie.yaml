@@ -157,7 +157,7 @@ Resources:
                         s3 = boto3.client('s3')
                         response = s3.delete_bucket_encryption(Bucket=BucketMacie)
 
-                        github_url = 'https://raw.githubusercontent.com/sgulbetekin/macie-demo/master/data/'
+                        github_url = 'https://raw.githubusercontent.com/aws-samples/amazon-macie-demo-with-sample-data/main/data/'
                         s3files = [ 'patent.txt', 'financial.txt', 'employee.txt', 'credentials.txt' ]
 
                         for s3file in s3files:
