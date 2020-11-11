@@ -6,6 +6,9 @@ AWS CloudFormation template (macie.yaml) will enable Amazon Macie and copy the f
 #### Requirements
 Amazon Macie should not be enabled in the region you are launching.
 
+### Architecture
+![amazon-macie-demo](diagram/diagram.png)
+
 ###  Launch the AWS CloudFormation Stack
 
 Click on the **Launch Stack** button below to launch the CloudFormation Stack to set up the Amazon Macie Demo in the region of your preference, by default this demo will be deployed in us-west-2 (Oregon) region.
