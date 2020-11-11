@@ -2,8 +2,6 @@ Parameters:
   ResourceName:
     Type: String
     Default: amazon-macie-demo
-    AllowedValues:
-      - amazon-macie-demo
     Description: Prefix of Resources created for this demo.
 
 Metadata:
