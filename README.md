@@ -7,6 +7,7 @@ AWS CloudFormation template (macie.yaml) will enable Amazon Macie and copy the f
 Amazon Macie should not be enabled in the region you are launching.
 If [Amazon S3 block public access](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/block-public-access-account.html) is enabled CloudFormation template will fail as it can't put the policy.
 
+
 ### Disclaimer
 This will create a public Amazon S3 Bucket such as "macie-data-AccountId-Region" with s3:ListBucket bucket policy on this specific bucket. It will not affect any other buckets in your account.
 
@@ -43,7 +44,7 @@ Be aware that there is a [Classification Job](https://us-west-2.console.aws.amaz
   - SensitiveData:S3Object/Personal
   - SensitiveData:S3Object/Credentials
   - SensitiveData:S3Object/CustomIdentifier
-  - SensitiveData:S3Object/Financial
+  - SensitiveData:S3Object/Financial -> this one will appear if you add some fake CC numbers in data/financial.txt file and create a new Classification Job Creation.
 
 ###  Clean up
 After completing your demo, delete AWS CloudFormation Stack using AWS Console or AWS CLI:
