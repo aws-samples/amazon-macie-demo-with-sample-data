@@ -4,8 +4,8 @@ The purpose of this repository is to demo how Data Classification and Discovery 
 AWS CloudFormation template (macie.yaml) will enable Amazon Macie and copy the fake data created previously in an Amazon S3 Bucket for its further classification. Also there will be a Custom Classifier to detect classified data in Amazon S3 Bucket.
 
 #### Requirements
-Amazon Macie should not be enabled in the region you are launching.
-If [Amazon S3 block public access](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/block-public-access-account.html) is enabled CloudFormation template will fail as it can't put the policy.
+  - Amazon Macie should not be enabled in the region you are launching.
+  - If [Amazon S3 block public access](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/block-public-access-account.html) is enabled CloudFormation template will fail as it can't put the policy.
 
 
 ### Disclaimer
