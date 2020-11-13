@@ -64,7 +64,7 @@ Resources:
             - "patent"
         MaximumMatchDistance: 50
         Name: PatentIDCustomDataIdentifier
-        Regex: Octank-\d{8}
+        Regex: AnyCompany-\d{8}
 
 # Generate Fake Data for Amazon Macie Job on Stack Creation
 # Clean up S3 buckets on Stack Deletion
