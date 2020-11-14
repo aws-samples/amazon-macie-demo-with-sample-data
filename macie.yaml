@@ -134,6 +134,7 @@ Resources:
         ZipFile: !Sub |
             import json, boto3, logging, os, urllib3
             import cfnresponse
+            import time
             logger = logging.getLogger()
             logger.setLevel(logging.INFO)
             AccountId = os.environ['AccountId']
@@ -163,6 +164,7 @@ Resources:
                           http=urllib3.PoolManager()
                           s3.upload_fileobj(http.request('GET', github_url+s3file, preload_content=False), BucketMacie, s3file)
 
+                        time.sleep(180)
                         client = boto3.client('macie2')
                         response = client.create_classification_job(
                         customDataIdentifierIds=[ CustomDataIdentifierID ],
