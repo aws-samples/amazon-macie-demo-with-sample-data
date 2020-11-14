@@ -9,7 +9,7 @@ AWS CloudFormation template (macie.yaml) will enable Amazon Macie and copy the f
 
 
 ### Disclaimer
-This will create a public Amazon S3 Bucket such as "macie-data-AccountId-Region" with s3:ListBucket bucket policy on this specific bucket. It will not affect any other buckets in your account.
+This will create a **public** Amazon S3 Bucket such as "macie-data-AccountId-Region" with s3:ListBucket bucket policy on this specific bucket. It will not affect any other buckets in your account however your security team might get an alert, this bucket is put **public** to demonstrate the capabilities of Amazon Macie.
 
 ### Architecture
 ![amazon-macie-demo](diagram/diagram.png)
