@@ -128,7 +128,7 @@ Resources:
       Handler: "index.lambda_handler"
       Runtime: python3.7
       MemorySize: 128
-      Timeout: 60
+      Timeout: 300
       Role: !GetAtt GenerateAndCleanupMacieDataLambdaRole.Arn
       Code:
         ZipFile: !Sub |
