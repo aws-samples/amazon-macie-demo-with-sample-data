@@ -33,24 +33,11 @@ Resources:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: 'AES256'
       PublicAccessBlockConfiguration:
-        RestrictPublicBuckets: false
+        RestrictPublicBuckets: true
       BucketName:
         Fn::Join:
           - '-'
           - ['macie-data', !Ref "AWS::AccountId", !Ref "AWS::Region"]
-  MacieDataBucketPolicy:
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref MacieDataBucket
-      PolicyDocument:
-        Id: MacieDataBucketPolicy
-        Version: 2012-10-17
-        Statement:
-          - Action: s3:ListBucket
-            Sid: PublicBucketPolicy
-            Effect: Allow
-            Principal: '*'
-            Resource: !Join ['', ['arn:aws:s3:::', !Ref 'MacieDataBucket']]
 
 # Create Amazon Macie Custom Data Identifier
   MacieCustomDataIdentifier:
