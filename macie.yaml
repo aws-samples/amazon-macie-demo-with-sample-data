@@ -38,22 +38,6 @@ Resources:
         Fn::Join:
           - '-'
           - ['macie-data', !Ref "AWS::AccountId", !Ref "AWS::Region"]
-  MacieDataBucketPolicy:
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref MacieDataBucket
-      PolicyDocument:
-        Id: MacieDataBucketPolicy
-        Version: 2012-10-17
-        Statement:
-          - Action: s3:*
-            Sid: BucketPolicy
-            Effect: Deny
-            Principal: '*'
-            Resource: !Join ['', ['arn:aws:s3:::', !Ref 'MacieDataBucket']]
-            Condition:
-              Bool:
-                'aws:SecureTransport': false
 
 # Create Amazon Macie Custom Data Identifier
   MacieCustomDataIdentifier:
